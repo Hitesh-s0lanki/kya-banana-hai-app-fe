@@ -1,0 +1,152 @@
+name: New bet-fair CICD
+# 1
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the master branch
+  push:
+    branches: [master, dev, stage]
+#2
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+        
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.16
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Extract branch name
+        shell: bash
+        run: |
+          echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      - name: generate env
+        run: |
+          touch .env
+          BRANCH=${{ steps.extract_branch.outputs.branch }}
+
+          echo "BRANCH=${{ steps.extract_branch.outputs.branch }}" >> $GITHUB_ENV
+          echo $BRANCH
+          if [ "$BRANCH" = "develop" ]
+          then
+            echo "==In dev-phase ENV GENERATION"
+            
+          elif [ "$BRANCH" = "stage" ]
+          then
+            echo "DEPLOY=false" >> $GITHUB_ENV
+            echo ">>>>In stage-phase ENV GENERATION"
+
+          elif [ "$BRANCH" = "master" ]
+          then
+            echo "DEPLOY=false" >> $GITHUB_ENV
+            echo "<<<<<<In pro-phase ENV GENERATION"
+            echo AUTH_SECRET=${{ secrets.AUTH_SECRET_MASTER }} >> .env
+            echo OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_MASTER }} >> .env
+            echo DATABASE_URL=${{ secrets.DATABASE_URL_MASTER }} >> .env
+            echo AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID_MASTER }} >> .env
+            echo AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET_MASTER }} >> .env
+            echo AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_MASTER }} >> .env
+            echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_MASTER }} >> .env
+            echo NEXT_PUBLIC_APP_URL="https://kyabananahai.com" >> .env
+            echo NEXTAUTH_URL="https://kyabananahai.com" >> .env
+            echo NEXTAUTH_BASEPATH="/api/auth" >> .env
+            echo AUTH_TRUST_HOST=true >> .env
+
+          else
+            echo "DEPLOY=false" >> $GITHUB_ENV
+          fi
+
+          ls -a
+          cat .env
+
+      - name: npm build
+        run: |
+          npm run build
+
+      - if: ${{ env.BRANCH == 'stage' }}
+        name: branch detection
+        run: echo "$BRANCH"
+
+      - if: ${{ env.BRANCH == 'master' }}
+        name: branch detection
+        run: echo "$BRANCH"
+
+      - if: ${{ env.BRANCH == 'develop' }}
+        name: branch detection
+        run: echo "$BRANCH"
+
+      - if: ${{ env.BRANCH == 'develop' }}
+        name: Deploy to Server-DEV, Skipped if branch to the code is not develop
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_KEY_DEV }}
+          #ARGS: "-rltgoDzvO --delete"
+          SOURCE: './'
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST_DEV }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER_DEV }}
+          TARGET: /home/ubuntu/
+
+      - if: ${{ env.BRANCH == 'stage' }}
+        name: Deploy to Server-Stage, Skipped if branch to the code is not stage
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_KEY_STAGE }}
+          #ARGS: "-rltgoDzvO --delete"
+          SOURCE: './'
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST_STAGE }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER_STAGE }}
+          TARGET: /home/ubuntu/
+
+      - if: ${{ env.BRANCH == 'master' }}
+        name: Deploy to Server-PROD, Skipped if branch to the code is not prod
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_KEY_MASTER }}
+          #ARGS: "-rltgoDzvO --delete"
+          SOURCE: './'
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST_MASTER }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: /home/ubuntu/fe/
+
+      - if: ${{ env.BRANCH == 'develop' }}
+        name: executing remote ssh commands-DEV, Skipped if branch to the code is not develop
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST_DEV }}
+          username: ${{ secrets.REMOTE_USER_DEV }}
+          key: ${{ secrets.REMOTE_SSH_KEY_DEV }}
+          port: 22
+          script: |
+            cd ~/
+
+      - if: ${{ env.BRANCH == 'stage' }}
+        name: executing remote ssh commands-Stage, Skipped if branch to the code is not stage
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST_STAGE }}
+          username: ${{ secrets.REMOTE_USER_STAGE }}
+          key: ${{ secrets.REMOTE_SSH_KEY_STAGE }}
+          port: 22
+          script: |
+            cd ~/
+
+      - if: ${{ env.BRANCH == 'master' }}
+        name: executing remote ssh commands-PROD, Skipped if branch to the code is not prod
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST_MASTER }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY_MASTER }}
+          port: 22
+          script: |
+            cd ~/fe
+            npm i
+            pm2 stop fe || true
+            pm2 reload fe || pm2 start -n fe npm -- start
