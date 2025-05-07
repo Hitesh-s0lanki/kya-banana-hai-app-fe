@@ -48,11 +48,11 @@ Just enter what you have, how much time you can spare, or your mood—and it giv
 
 > Add screenshots like:
 
-```
 ![Prompt Input](images/home.png)
+
 ![AI Suggestion](images/recipe.png)
+
 ![AI Suggested Recipe](images/recipes.png)
-```
 
 ---
 
