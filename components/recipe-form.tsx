@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
 import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { useForm } from "react-hook-form";
@@ -15,7 +8,6 @@ import { Checkbox } from "./ui/checkbox";
 import Image from "next/image";
 import { useState } from "react";
 import Loading from "./loading";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Textarea } from "./ui/textarea";
 import { RecipeSchema } from "@/schema/index.schema";
@@ -50,12 +42,14 @@ const RecipeForm = () => {
   }
 
   return (
-    <Card className=" bg-white">
-      <CardHeader>
-        <CardTitle>Generate Recipe</CardTitle>
-        <CardDescription>ek naya swadisht anubhav banate hai.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className=" bg-white p-4 md:px-8 lg:px-8 rounded-md border shadow-sm">
+      <div className="py-2 space-y-1">
+        <h1 className=" font-semibold text-center text-xl">Generate Recipe</h1>
+        <p className=" text-muted-foreground text-sm text-center">
+          Ek naya swadisht anubhav banate hai.
+        </p>
+      </div>
+      <div className=" py-5">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -65,7 +59,7 @@ const RecipeForm = () => {
                 <h1 className=" text-muted-foreground font-semibold text-sm">
                   Select Cuisine Type
                 </h1>
-                <div className=" w-full flex flex-row gap-2">
+                <div className=" w-full flex flex-row gap-2 flex-wrap">
                   <FormField
                     control={form.control}
                     name="type.veg"
@@ -165,7 +159,7 @@ const RecipeForm = () => {
                   Select Meal Type
                 </h1>
 
-                <div className="w-full flex flex-row gap-2">
+                <div className="w-full flex flex-row gap-2 flex-wrap">
                   <FormField
                     control={form.control}
                     name="meal.breakfast"
@@ -463,17 +457,17 @@ const RecipeForm = () => {
 
             <div className="py-2">
               <Button
-                className=" flex gap-2 items-center px-8"
+                className=" flex gap-2 items-center px-8 w-full"
                 type="submit"
                 size="sm">
-                Create
+                Generate
                 <Image src="/star.svg" alt="AI" height={18} width={18} />
               </Button>
             </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

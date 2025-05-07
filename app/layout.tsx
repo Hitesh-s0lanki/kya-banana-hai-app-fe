@@ -10,7 +10,11 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Kya Banana Hai",
-  description: "ek naya sawal hai, jo har din ke khane ko ek naya aur romanchak anubhav banata hai.",
+  description:
+    "ek naya sawal hai, jo har din ke khane ko ek naya aur romanchak anubhav banata hai.",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default async function RootLayout({
@@ -18,7 +22,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const session = await auth();
 
   return (
@@ -27,7 +30,8 @@ export default async function RootLayout({
         <html lang="en">
           <body className={inter.className}>
             <Toaster />
-            {children}</body>
+            {children}
+          </body>
         </html>
       </QueryProviders>
     </SessionProvider>
